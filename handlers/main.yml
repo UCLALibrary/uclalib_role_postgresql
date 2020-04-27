@@ -1,2 +1,15 @@
 ---
-# handlers file for uclalib_role_postgresql
+
+- name: Start PostgreSQL
+  service:
+    name: "{{ pgsql_service }}"
+    state: started
+    enabled: true
+  become: true
+
+- name: Restart PostgreSQL
+  service:
+    name: "{{ pgsql_service }}"
+    state: restarted
+  delegate_to: '{{ (db_host == "localhost") | ternary (omit, db_host) }}'
+  become: true

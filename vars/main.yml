@@ -1,2 +1,13 @@
 ---
-# vars file for uclalib_role_postgresql
+
+pgsql_service: postgresql{% if pgsql_major_version|length > 0 %}-{{ pgsql_major_version }}{% endif %}
+
+# PostgreSQL Global Development Group vs EL
+# PGDG uses postgres-X-setup in /usr/pgsql-X/bin/
+# EL uses postgresql-setup in /usr/bin/
+# psql(1) uses alternatives, postgres-setup(8) does not
+# postgres-setup is an EL-only thing
+
+pgsql_setup: postgresql{% if pgsql_major_version|length > 0 %}-{{ pgsql_major_version }}{% endif %}-setup
+
+pgsql_path: "{% if pgsql_major_version|length > 0 %}/usr/pgsql-{{ pgsql_major_version }}/bin:{% endif %}/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin"

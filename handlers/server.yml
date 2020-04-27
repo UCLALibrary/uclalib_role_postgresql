@@ -1,0 +1,21 @@
+---
+
+- name: Start PostgreSQL
+  service:
+    name: postgresql-{{ pgsql_major_version }}
+    state: started
+    enabled: true
+  become: true
+
+- name: Restart PostgreSQL
+  service:
+    name: postgresql-{{ pgsql_major_version }}
+    state: restarted
+  become: true
+
+- name: Start Apache
+  service:
+    name: httpd
+    state: started
+    enabled: true
+  become: true

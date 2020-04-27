@@ -1,2 +1,11 @@
 ---
-# tasks file for uclalib_role_postgresql
+
+# name: Add PostgreSQL EL Repository
+- import_tasks: repo.yml
+
+- name: Install PostgreSQL Server (if requested)
+  include_tasks: server.yml
+  when: pgsql_server|bool
+
+# name: Install PostgreSQL Client
+- import_tasks: client.yml

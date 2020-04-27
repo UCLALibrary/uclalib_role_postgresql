@@ -1,2 +1,9 @@
 ---
-# defaults file for uclalib_role_postgresql
+
+# Use system packaged postgres
+pgsql_major_version: ""
+
+# Install client only
+pgsql_server: false
+
+db_host: "localhost"

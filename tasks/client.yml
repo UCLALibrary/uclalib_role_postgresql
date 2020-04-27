@@ -1,0 +1,64 @@
+---
+
+- name: "Install PostgreSQL Client and Ansible Requirements"
+  package:
+    name: [ 'postgresql{{ pgsql_major_version }}', 'python-psycopg2', 'python-ipaddress' ]
+    state: present
+  become: true
+
+- name: "Create database user"
+  postgresql_user:
+    name: '{{ db_user }}'
+    password: '{{ db_pass | default (omit) }}'
+    encrypted: true
+    state: present
+  become_user: postgres
+  become: true
+  delegate_to: '{{ (db_host == "localhost") | ternary (omit, db_host) }}'
+  when:
+    - db_host is defined
+    - db_user is defined
+
+- name: "Create the database"
+  postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user | default (omit) }}"
+  become_user: postgres
+  become: true
+  delegate_to: '{{ (db_host == "localhost") | ternary (omit, db_host) }}'
+  when:
+    - db_host is defined
+    - db_name is defined
+
+- block:
+  - name: "Get location of pg_hba.conf"
+    command: >
+      psql
+        --tuples-only
+        --pset=format=unaligned
+        --command='show hba_file'
+    changed_when: false
+    check_mode: false
+    become_user: postgres
+    become: true
+    register: hba_conf_path
+    delegate_to: '{{ (db_host == "localhost") | ternary (omit, db_host) }}'
+
+  - name: "Allow user access"
+    postgresql_pg_hba:
+      dest: '{{ hba_conf_path.stdout }}'
+      contype: host
+      address: "{{ db_client_address | default ('samenet') }}"
+      databases: '{{ db_name }}'
+      users: '{{ db_user }}'
+      state: present
+    become: true
+    delegate_to: '{{ (db_host == "localhost") | ternary (omit, db_host) }}'
+    notify: Restart PostgreSQL
+
+  # block:
+  when:
+    - db_host is defined
+    - db_name is defined
+    - db_user is defined
+    - db_name != db_user

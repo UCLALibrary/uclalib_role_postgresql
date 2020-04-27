@@ -1,0 +1,8 @@
+---
+
+- name: "Restart PostgreSQL"
+  service:
+    name: postgresql-{{ pgsql_major_version }}
+    state: restarted
+  become: true
+  delegate_to: '{{ (db_host  == "localhost") | ternary (omit, db_host) }}'
