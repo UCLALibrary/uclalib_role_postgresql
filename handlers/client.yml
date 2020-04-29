@@ -5,4 +5,4 @@
     name: postgresql-{{ pgsql_major_version }}
     state: restarted
   become: true
-  delegate_to: '{{ (db_host  == "localhost") | ternary (omit, db_host) }}'
+  delegate_to: '{{ (pgsql_host  == "localhost") | ternary (omit, pgsql_host) }}'

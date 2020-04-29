@@ -6,4 +6,4 @@ pgsql_major_version: ""
 # Install client only
 pgsql_server: false
 
-db_host: "localhost"
+pgsql_host: "localhost"
