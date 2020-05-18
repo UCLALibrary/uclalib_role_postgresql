@@ -1,0 +1,64 @@
+#!/bin/bash
+
+today="$(date +%Y-%m-%d)" # YYYY-MM-DD (ISO 8601)
+usage() {
+  echo "${0##*/} [-h] [-d <directory>]"; # lazy basename(1)
+  echo "  -h this help"
+  echo "  -d <directory> directory to save to"
+  echo "     default: /var/lib/psqldump"
+  echo
+  echo "Dumps the PostgreSQL cluster, and all databases therein."
+  if [[ "$1" ]]; then
+    echo ; echo "illegal option -- -$1"
+  fi
+}
+
+# leading : lets us handle illegal options
+while getopts :d:h arg; do
+  case "$arg" in
+    d) directory="$OPTARG" ;;
+    h) usage; exit 0 ;;
+    *) usage "$arg"; exit 1 ;;
+  esac
+done
+
+base="${directory:-/var/lib/psqldump}/$today"
+suffix=""
+increment=0
+until [[ ! -d "$base$suffix" ]]; do
+  : $(( increment++ ))
+  suffix=".$increment"
+done
+target="$base$suffix"
+mkdir -p "$target" || exit 1
+cd "$target" || exit 1
+
+# full cluster
+pg_dumpall \
+  --clean  \
+  --file "pg_cluster-$today.sql" \
+  --if-exists \
+|| echo "pg_dumpall failed: $?"
+
+# individual databases
+# global information (not within a single database)
+pg_dumpall \
+  --file "pg_globals-$today.sql" \
+  --globals-only \
+|| echo "pg_globals failed: $?"
+# find, then loop over databases
+databases="$(psql \
+  --command 'SELECT datname FROM pg_database WHERE datistemplate = false;'\
+  --pset format=unaligned \
+  --tuples-only \
+)"
+for database in $databases; do
+  pg_dump \
+    --clean \
+    --file "pg_$database-$today.d" \
+    --format custom \
+    --format directory \
+    --if-exists \
+    "$database" \
+  || "pg_dump of $database failed: $?"
+done

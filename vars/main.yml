@@ -11,3 +11,5 @@ pgsql_service: postgresql{% if pgsql_major_version|length > 0 %}-{{ pgsql_major_
 pgsql_setup: postgresql{% if pgsql_major_version|length > 0 %}-{{ pgsql_major_version }}{% endif %}-setup
 
 pgsql_path: "{% if pgsql_major_version|length > 0 %}/usr/pgsql-{{ pgsql_major_version }}/bin:{% endif %}/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin"
+
+pgsql_backup: "pg-backup"

@@ -66,3 +66,26 @@
   become_user: postgres
   notify:
     - Restart PostgreSQL
+
+- name: "Add backup script"
+  copy:
+    dest: "/usr/local/bin/{{ pgsql_backup }}"
+    src: "{{ pgsql_backup }}"
+    mode: "0555"
+
+- name: "Create backup directory"
+  file:
+    dest: /var/lib/psqldump
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0755"
+
+- name: "Enable backups"
+  cron:
+    name: psql-backup
+    cron_file: postgres-backup
+    special_time: daily
+    job: '{{ pgsql_backup }}'
+    user: postgres
+    state: present
