@@ -1,6 +1,10 @@
 #!/bin/bash
 
+set -e # abort at any unanticipated error
+
 today="$(date +%Y-%m-%d)" # YYYY-MM-DD (ISO 8601)
+
+# usage information (-h, or illegal option)
 usage() {
   echo "${0##*/} [-h] [-d <directory>]"; # lazy basename(1)
   echo "  -h this help"
@@ -13,6 +17,17 @@ usage() {
   fi
 }
 
+# Print failed stage to stderr, letting cron alert us
+failed() {
+  status=$? # save exit code
+  # direct stdout to saved stderr
+  exec >&4
+  echo "${1+$1 }failed: $status (line: ${BASH_LINENO[0]})"
+}
+
+# Handle unanticpated errors
+trap failed ERR
+
 # leading : lets us handle illegal options
 while getopts :d:h arg; do
   case "$arg" in
@@ -22,6 +37,8 @@ while getopts :d:h arg; do
   esac
 done
 
+# Create dump directory based upon date, incrementing
+# suffix until new one is created
 base="${directory:-/var/lib/psqldump}/$today"
 suffix=""
 increment=0
@@ -30,22 +47,30 @@ until [[ ! -d "$base$suffix" ]]; do
   suffix=".$increment"
 done
 target="$base$suffix"
-mkdir -p "$target" || exit 1
-cd "$target" || exit 1
+mkdir -p "$target"
+cd "$target"
 
-# full cluster
+# Save stdout/stderr file descriptors
+exec 3<&1
+exec 4<&2
+
+# Log any/all output
+exec > log.txt
+exec 2>&1
+
+# Dump the full cluster
 pg_dumpall \
   --clean  \
   --file "pg_cluster-$today.sql" \
   --if-exists \
-|| echo "pg_dumpall failed: $?"
+|| failed "pg_dumpall"
 
-# individual databases
-# global information (not within a single database)
+# Dump individual databases
+# global information (outside all single databases)
 pg_dumpall \
   --file "pg_globals-$today.sql" \
   --globals-only \
-|| echo "pg_globals failed: $?"
+|| failed "pg_globals"
 # find, then loop over databases
 databases="$(psql \
   --command 'SELECT datname FROM pg_database WHERE datistemplate = false;'\
@@ -60,5 +85,5 @@ for database in $databases; do
     --format directory \
     --if-exists \
     "$database" \
-  || "pg_dump of $database failed: $?"
+  || failed "pg_dump of $database"
 done
