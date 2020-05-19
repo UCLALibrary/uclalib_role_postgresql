@@ -69,7 +69,7 @@
 
 - name: "Add backup script"
   copy:
-    dest: "/usr/local/bin/{{ pgsql_backup }}"
+    dest: "{{ pgsql_backup_pathname }}"
     src: "{{ pgsql_backup }}"
     mode: "0555"
 
@@ -86,6 +86,6 @@
     name: psql-backup
     cron_file: postgres-backup
     special_time: daily
-    job: '{{ pgsql_backup }}'
+    job: '{{ pgsql_backup_pathname }}'
     user: postgres
     state: present
