@@ -6,5 +6,5 @@
     state: present
   become: true
   when:
-    - pgsql_major_version|length > 0
+    - (pgsql_major_version|length) > 0
     - ansible_os_family == "RedHat"
