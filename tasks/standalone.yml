@@ -1,0 +1,89 @@
+---
+
+# Must start posgtgresql prior to adjusting user parameters
+- meta: flush_handlers
+
+- name: "Set Superuser password"
+  postgresql_user:
+    name: 'postgres'
+    password: '{{ pgsql_superuser_password }}'
+    encrypted: true
+    state: present
+  become_user: postgres
+  become: true
+  when: pgsql_superuser_password is defined
+
+- name: "Create replication user"
+  postgresql_user:
+    name: '{{ pgsql_replicator }}'
+    password: '{{ pgsql_replicator_password | default (omit) }}'
+    role_attr_flags: "LOGIN,REPLICATION"
+    encrypted: true
+    state: present
+  become_user: postgres
+  become: true
+  delegate_to: '{{ (pgsql_host == "localhost") | ternary (omit, pgsql_host) }}'
+
+- name: "Get location of pg_hba.conf"
+  command: >
+    psql --tuples-only --pset=format=unaligned --command='show hba_file'
+  changed_when: false
+  check_mode: false
+  become_user: postgres
+  become: true
+  register: hba_conf_path
+
+- name: "Adjust pg_hba.conf"
+  postgresql_pg_hba:
+    dest: '{{ hba_conf_path.stdout }}'
+    address: '{{ item.address }}'
+    contype: '{{ item.type | default ("host") }}'
+    databases: '{{ item.database | default ("sameuser") }}'
+    method: '{{ item.method | default ("md5") }}'
+    users: '{{ item.user | default ("all") }}'
+    state: '{{ item.state | default ("present") }}'
+  become: true
+  loop:
+    - { type: 'host', database: 'all', user: 'all', address: '::1/128', method: 'ident', state: 'absent' }
+    - { type: 'host', database: 'all', user: 'all', address: '127.0.0.1/32', method: 'ident', state: 'absent' }
+    - {address: '', type: 'local', user: 'all', method: 'peer' }
+    - { address: 'samehost', database: 'all', user: 'postgres' }
+    - { address: 'samenet' }
+    - { address: 'samenet', database: 'replication', user: '{{ pgsql_replicator}}'}
+  notify:
+    - Restart PostgreSQL
+
+- name: "Listen on all addresses"
+  postgresql_set:
+    name: listen_addresses
+    value: '0.0.0.0'
+  become: true
+  become_user: postgres
+  notify:
+    - Restart PostgreSQL
+
+- name: "Add backup script"
+  copy:
+    dest: "{{ pgsql_backup_pathname }}"
+    src: "{{ pgsql_backup }}"
+    mode: "0555"
+  become: true
+
+- name: "Create backup directory"
+  file:
+    dest: /var/lib/psqldump
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0755"
+  become: true
+
+- name: "Enable backups"
+  cron:
+    name: psql-backup
+    cron_file: postgres-backup
+    special_time: daily
+    job: '{{ pgsql_backup_pathname }}'
+    user: postgres
+    state: present
+  become: true

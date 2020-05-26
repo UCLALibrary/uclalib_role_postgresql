@@ -1,0 +1,65 @@
+---
+
+# https://wiki.postgresql.org/wiki/Streaming_Replication
+
+- name: "Get location of data dir"
+  command: >
+    psql
+      --tuples-only
+      --pset=format=unaligned
+      --command='show data_directory'
+  changed_when: false
+  check_mode: false
+  become_user: postgres
+  become: true
+  register: pgsql_data_dir
+  delegate_to: '{{ pgsql_primary }}'
+
+# Reset database
+- block:
+  - name: Stop PostgreSQL
+    service:
+      name: postgresql-{{ pgsql_major_version }}
+      state: stopped
+    become: true
+    when:
+
+  - name: Eliminate any existing data dir
+    file:
+      path: "{{ pgsql_data_dir.stdout }}"
+      state: absent
+    become: true
+
+  - name: Remove Replication Slot
+    postgresql_slot:
+      name: "{{ pgsql_slot_name }}"
+      state: absent
+    become: true
+    become_user: postgres
+    delegate_to: "{{ pgsql_primary }}"
+
+  # Reset database block
+  when: pgsql_backup_reset|bool
+
+# Replication slot names may only contain lower case letters, numbers, and
+# the underscore character.
+# Replication slot names will get truncated to the first 63 characters.
+- name: Enable replication
+  command:
+    cmd: >
+      pg_basebackup
+        --create-slot
+        --dbname postgres://{{ pgsql_replicator }}:{{ pgsql_replicator_password }}@{{ pgsql_primary }}/
+        --pgdata={{ pgsql_data_dir.stdout }}
+        --progress
+        --slot={{ pgsql_slot_name }}
+        --verbose
+        --wal-method=stream
+        --write-recovery-conf
+    creates: "{{ pgsql_data_dir.stdout }}/postgresql.conf"
+  become: true
+  become_user: postgres
+  register: pgsql_replication_out
+  changed_when:
+    - pgsql_replication_out.stderr is defined
+    - "'initiating base backup' in pgsql_replication_out.stderr"

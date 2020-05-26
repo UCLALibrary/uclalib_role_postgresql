@@ -7,3 +7,5 @@ pgsql_major_version: ""
 pgsql_server: false
 
 pgsql_host: "localhost"
+pgsql_replicator: "replicator"
+pgsql_backup_reset: false

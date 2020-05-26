@@ -18,74 +18,10 @@
   become: true
   notify: Start PostgreSQL
 
-- meta: flush_handlers
+- name: Install PostgreSQL (standalone)
+  include_tasks: standalone.yml
+  when: pgsql_primary is not defined
 
-- name: "Set Superuser password"
-  postgresql_user:
-    name: 'postgres'
-    password: '{{ pgsql_superuser_password }}'
-    encrypted: true
-    state: present
-  become_user: postgres
-  become: true
-  when: pgsql_superuser_password is defined
-
-- name: "Get location of pg_hba.conf"
-  command: >
-    psql --tuples-only --pset=format=unaligned --command='show hba_file'
-  changed_when: false
-  check_mode: false
-  become_user: postgres
-  become: true
-  register: hba_conf_path
-
-- name: "Adjust pg_hba.conf"
-  postgresql_pg_hba:
-    dest: '{{ hba_conf_path.stdout }}'
-    address: '{{ item.address }}'
-    contype: '{{ item.type | default ("host") }}'
-    databases: '{{ item.database | default ("sameuser") }}'
-    method: '{{ item.method | default ("md5") }}'
-    users: '{{ item.user | default ("all") }}'
-    state: '{{ item.state | default ("present") }}'
-  become: true
-  loop:
-    - { type: 'host', database: 'all', user: 'all', address: '::1/128', method: 'ident', state: 'absent' }
-    - { type: 'host', database: 'all', user: 'all', address: '127.0.0.1/32', method: 'ident', state: 'absent' }
-    - {address: '', type: 'local', user: 'all', method: 'peer' }
-    - { address: 'samehost', database: 'all', user: 'postgres' }
-    - { address: 'samenet' }
-  notify:
-    - Restart PostgreSQL
-
-- name: "Listen on all addresses"
-  postgresql_set:
-    name: listen_addresses
-    value: '0.0.0.0'
-  become: true
-  become_user: postgres
-  notify:
-    - Restart PostgreSQL
-
-- name: "Add backup script"
-  copy:
-    dest: "{{ pgsql_backup_pathname }}"
-    src: "{{ pgsql_backup }}"
-    mode: "0555"
-
-- name: "Create backup directory"
-  file:
-    dest: /var/lib/psqldump
-    state: directory
-    owner: postgres
-    group: postgres
-    mode: "0755"
-
-- name: "Enable backups"
-  cron:
-    name: psql-backup
-    cron_file: postgres-backup
-    special_time: daily
-    job: '{{ pgsql_backup_pathname }}'
-    user: postgres
-    state: present
+- name: Create PostgreSQL Streaming Replication (if requested)
+  include_tasks: backup.yml
+  when: pgsql_primary is defined

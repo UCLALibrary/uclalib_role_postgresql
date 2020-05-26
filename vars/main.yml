@@ -14,3 +14,4 @@ pgsql_path: "{% if pgsql_major_version|length > 0 %}/usr/pgsql-{{ pgsql_major_ve
 
 pgsql_backup: "pg-backup"
 pgsql_backup_pathname: "/usr/local/bin/{{ pgsql_backup }}"
+pgsql_slot_name: "{{ansible_hostname | lower | regex_replace('[^a-z0-9_]','_') }}"
