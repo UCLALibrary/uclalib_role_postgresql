@@ -8,16 +8,6 @@
   notify:
     - Start PostgreSQL
 
-# PostgreSQL Global Development Group
-- name: "Intialize PostgreSQL"
-  command: "{{ pgsql_setup }} initdb"
-  args:
-    creates: /var/lib/pgsql/{{ pgsql_major_version }}/data/postgresql.conf
-  environment:
-    PATH: "{{ pgsql_path }}"
-  become: true
-  notify: Start PostgreSQL
-
 - name: Install PostgreSQL (standalone)
   include_tasks: standalone.yml
   when: pgsql_primary is not defined

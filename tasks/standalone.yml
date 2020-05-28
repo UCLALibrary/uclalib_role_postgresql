@@ -1,5 +1,14 @@
 ---
 
+- name: "Intialize PostgreSQL"
+  command: "{{ pgsql_setup }} initdb"
+  args:
+    creates: /var/lib/pgsql/{{ pgsql_major_version }}/data/postgresql.conf
+  environment:
+    PATH: "{{ pgsql_path }}"
+  become: true
+  notify: Start PostgreSQL
+
 # Must start posgtgresql prior to adjusting user parameters
 - meta: flush_handlers
 
