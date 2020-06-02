@@ -62,3 +62,6 @@
     - pgsql_name is defined
     - pgsql_user is defined
     - pgsql_name != pgsql_user
+
+# Another role may depend upon proper setting of pg_hba.conf
+- meta: flush_handlers
