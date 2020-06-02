@@ -2,6 +2,11 @@
 
 # https://wiki.postgresql.org/wiki/Streaming_Replication
 
+#- name: Set replicator password
+- set_fact:
+    pgsql_replicator_password: "{{ hostvars[pgsql_primary]['pgsql_replicator_password']|default('') }}"
+  when: pgsql_replicator_password is not defined
+
 - name: "Get location of data dir"
   command: >
     psql
@@ -49,7 +54,8 @@
     cmd: >
       pg_basebackup
         --create-slot
-        --dbname postgres://{{ pgsql_replicator }}:{{ hostvars[pgsql_primary]['pgsql_replicator_password']|default(omit) }}@{{ pgsql_primary }}/
+        --dbname postgres://{{ pgsql_replicator }}:{{ pgsql_replicator_password }}@{{ pgsql_primary }}/
+        --no-password
         --pgdata={{ pgsql_data_dir.stdout }}
         --progress
         --slot={{ pgsql_slot_name }}
@@ -63,3 +69,16 @@
   changed_when:
     - pgsql_replication_out.stderr is defined
     - "'initiating base backup' in pgsql_replication_out.stderr"
+
+- name: Update replicator connection
+  lineinfile:
+    path: "{{ pgsql_data_dir.stdout }}/postgresql.auto.conf"
+    regexp: "^(primary_conninfo .*[ ']){{ item.key }}=\\S+ (.*)$"
+    line: "\\1{{ item.key }}={{ item.value }} \\2"
+    backrefs: true
+  loop:
+    - { key: 'password', value: '{{ pgsql_replicator_password }}' }
+    - { key: 'user', value: '{{ pgsql_replicator }}' }
+    # - { key: 'host', value: '{{ pgsql_primary }}' } # Probably a very bad idea
+  become: true
+  become_user: postgres
