@@ -49,7 +49,7 @@
     cmd: >
       pg_basebackup
         --create-slot
-        --dbname postgres://{{ pgsql_replicator }}:{{ pgsql_replicator_password }}@{{ pgsql_primary }}/
+        --dbname postgres://{{ pgsql_replicator }}:{{ hostvars[pgsql_primary]['pgsql_replicator_password']|default(omit) }}@{{ pgsql_primary }}/
         --pgdata={{ pgsql_data_dir.stdout }}
         --progress
         --slot={{ pgsql_slot_name }}
