@@ -6,6 +6,8 @@
     creates: /var/lib/pgsql/{{ pgsql_major_version }}/data/postgresql.conf
   environment:
     PATH: "{{ pgsql_path }}"
+    PGSETUP_INITDB_OPTIONS: >
+      --encoding={{ pgsql_encoding }} --locale={{ pgsql_locale }}
   become: true
   notify: Start PostgreSQL
 

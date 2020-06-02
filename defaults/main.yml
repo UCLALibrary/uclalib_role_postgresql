@@ -9,3 +9,6 @@ pgsql_server: false
 pgsql_host: "localhost"
 pgsql_replicator: "replicator"
 pgsql_backup_reset: false
+
+pgsql_encoding: "UTF8"
+pgsql_locale: "en_US.UTF-8"

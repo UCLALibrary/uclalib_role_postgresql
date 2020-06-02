@@ -40,6 +40,10 @@ Role Variables
 
 * `pgsql_superuser_password`: (string) PostgreSQL superuser password
   * (default) omit
+* `pgsql_encoding`: (string) Encoding for template0
+  * (default) UTF8
+* `pgsql_locale`: (string) Locale for template0
+  * (default) en_US.UTF-8
 
 Dependencies
 ------------
