@@ -61,9 +61,9 @@ exec 2>&1
 # Dump the full cluster
 pg_dumpall \
   --clean  \
-  --file "pg_cluster-$today.sql" \
   --if-exists \
-|| failed "pg_dumpall"
+| xz -9 > "pg_cluster-$today.sql.xz" \
+|| failed "pg_cluster"
 
 # Dump individual databases
 # global information (outside all single databases)
