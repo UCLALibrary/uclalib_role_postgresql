@@ -62,7 +62,7 @@ exec 2>&1
 pg_dumpall \
   --clean  \
   --if-exists \
-| xz -9 > "pg_cluster-$today.sql.xz" \
+| gzip -1 > "pg_cluster-$today.sql.gz" \
 || failed "pg_cluster"
 
 # Dump individual databases
