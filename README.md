@@ -1,4 +1,4 @@
-Role Name
+uclalib_role_postgresql
 =========
 
 PostgreSQL Client / Server for UCLA Library
@@ -53,26 +53,28 @@ None.
 Example Playbook
 ----------------
 
-
+    ---
     - hosts: db
       roles:
-         - {
-              role: uclalib_role_postgresql,  
-              pgsql_major_version: '12',
-              pgsql_server: true,
-              pgsql_superuser_password: 'changeme',
-            }
+        - role: uclalib_role_postgresql
+          vars:
+            pgsql_major_version: '12'
+            pgsql_server: true
+            pgsql_superuser_password: 'changeme'
+          become: true
 
     - hosts: client
+      vars:
+        pgsql_host: 'db',
+        pgsql_major_version: '12',
+        pgsql_name: 'app',
+        pgsql_pass: 'changemealso',
+        pgsql_user: 'app',
+
       roles:
-        - {
-            role: uclalib_role_postgresql,
-            pgsql_major_version: '12',
-            pgsql_host: 'db',
-            pgsql_name: 'app',
-            pgsql_user: 'app',
-            pgsql_pass: 'changemealso',
-        }
+        - role: uclalib_role_postgresql
+          delegate_to: '{{ pgsql_host }}'
+          become: true
 
 License
 -------
@@ -82,6 +84,6 @@ BSD-2-Clause
 Author Information
 ------------------
 
-John H. Robinson, IV <jhriv@ucla.edu>
-Powell Library
+John H. Robinson, IV <jhriv@ucla.edu>    
+Powell Library    
 University of California, Los Angeles
