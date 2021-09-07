@@ -64,4 +64,5 @@
     - pgsql_name != pgsql_user
 
 # Another role may depend upon proper setting of pg_hba.conf
-- meta: flush_handlers
+- name: Ensure postgres server is restarted, if required
+  meta: flush_handlers

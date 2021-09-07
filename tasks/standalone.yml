@@ -12,7 +12,8 @@
   notify: Start PostgreSQL
 
 # Must start posgtgresql prior to adjusting user parameters
-- meta: flush_handlers
+- name: Ensure Postgres is started
+  meta: flush_handlers
 
 - name: "Set Superuser password"
   postgresql_user:
@@ -57,10 +58,10 @@
   loop:
     - { type: 'host', database: 'all', user: 'all', address: '::1/128', method: 'ident', state: 'absent' }
     - { type: 'host', database: 'all', user: 'all', address: '127.0.0.1/32', method: 'ident', state: 'absent' }
-    - {address: '', type: 'local', user: 'all', method: 'peer' }
+    - { address: '', type: 'local', user: 'all', method: 'peer' }
     - { address: 'samehost', database: 'all', user: 'postgres' }
     - { address: 'samenet' }
-    - { address: 'samenet', database: 'replication', user: '{{ pgsql_replicator}}'}
+    - { address: 'samenet', database: 'replication', user: '{{ pgsql_replicator }}' }
   notify:
     - Restart PostgreSQL
 
