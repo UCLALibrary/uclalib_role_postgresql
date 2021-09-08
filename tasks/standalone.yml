@@ -65,6 +65,10 @@
   notify:
     - Restart PostgreSQL
 
+- name: Enable TLS
+  include_tasks: tls.yml
+  when: pgsql_key_file is defined
+
 - name: "Listen on all addresses"
   postgresql_set:
     name: listen_addresses

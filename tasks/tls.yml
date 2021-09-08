@@ -1,0 +1,56 @@
+- name: Get data directory path
+  command: >
+    psql --tuples-only --pset=format=unaligned --command='show data_directory'
+  changed_when: false
+  check_mode: false
+  become_user: postgres
+  become: true
+  register: data_directory_path
+
+- name: Check keys and certs paths
+  stat:
+    # >- removes the trailing newline
+    path: >-
+      {% 
+        if not hostvars[inventory_hostname][item] |  regex_search ('^/') 
+        %}{{ data_directory_path.stdout }}/{% 
+        endif %}{{ hostvars[inventory_hostname][item] | trim }}
+  loop:
+    - 'pgsql_ca_file'
+    - 'pgsql_cert_file'
+    - 'pgsql_crl_file'
+    - 'pgsql_key_file'
+  when: hostvars[inventory_hostname][item] is defined
+  check_mode: false
+  register: cert_stat
+
+- name: Ensure keys and certs exist
+  assert:
+    that: item.stat.isreg
+  loop: 
+    '{{ cert_stat.results }}'
+  when: item.skipped is not defined
+
+- name: Get config file pathname
+  command: >
+    psql --tuples-only --pset=format=unaligned --command='show config_file'
+  changed_when: false
+  check_mode: false
+  become_user: postgres
+  become: true
+  register: config_file_path
+
+- name: Set SSL parameters
+  lineinfile:
+    path: '{{ config_file_path.stdout }}'
+    regexp: '^(#|){{ item.key }} = .*$'
+    line: "{{ item.key }} = '{{ item.value }}'"
+  loop:
+    - { key: 'ssl_ca_file', value: '{{ pgsql_ca_file| default(omit) }}'}
+    - { key: 'ssl_cert_file', value: '{{ pgsql_cert_file| default(omit) }}'}
+    - { key: 'ssl_crl_file', value: '{{ pgsql_crl_file| default(omit) }}'}
+    - { key: 'ssl_key_file', value: '{{ pgsql_key_file| default(omit) }}'}
+    - { key: 'ssl', value: '{{ pgsql_key_file is defined | ternary ("on", omit) }}'}
+  when: not item.value | regex_search ('^__omit_place_holder__.*$')
+  notify:
+  - Restart PostgreSQL

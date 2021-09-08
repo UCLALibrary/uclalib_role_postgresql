@@ -44,6 +44,14 @@ Role Variables
   * (default) UTF8
 * `pgsql_locale`: (string) Locale for template0
   * (default) en_US.UTF-8
+* `pgsql_cert_file`: (string) Path to ssl certificate
+  * (default) omit
+* `pgsql_key_file`: (string) Path to ssl key
+  * (default) omit
+* `pgsql_ca_file`: (string) Path to trusted certifying authorites
+  * (default) omit
+* `pgsql_crl_file`: (string) Path to certificate revocation list
+  * (default) omit
 
 Dependencies
 ------------
