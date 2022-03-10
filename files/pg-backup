@@ -4,12 +4,21 @@ set -e # abort at any unanticipated error
 
 today="$(date +%Y-%m-%d)" # YYYY-MM-DD (ISO 8601)
 
+# Default keep hot backups for two weeks
+backup_age=14
+
+# Default backup location. Usually a symlink to the real location.
+# See the `-d`` option to override
+directory=/var/lib/pgbackup
+
 # usage information (-h, or illegal option)
 usage() {
-  echo "${0##*/} [-h] [-d <directory>]"; # lazy basename(1)
+  echo "${0##*/} [-h] [-b <days>] [-d <directory>]"; # lazy basename(1)
   echo "  -h this help"
   echo "  -d <directory> directory to save to"
-  echo "     default: /var/lib/psqldump"
+  echo "     default: $directory"
+  echo "  -b <days> days to keep backups"
+  echo "     default: $backup_age"
   echo
   echo "Dumps the PostgreSQL cluster, and all databases therein."
   if [[ "$1" ]]; then
@@ -29,17 +38,23 @@ failed() {
 trap failed ERR
 
 # leading : lets us handle illegal options
-while getopts :d:h arg; do
+while getopts :b:d:h arg; do
   case "$arg" in
+    b) backup_age="$OPTARG" ;;
     d) directory="$OPTARG" ;;
     h) usage; exit 0 ;;
     *) usage "$arg"; exit 1 ;;
   esac
 done
 
+# Verify the backup_age is numeric.
+case $backup_age in
+  ''|*[!0-9]*) echo "-b must be numeric"; echo; usage; exit 1 ;;
+esac
+
 # Create dump directory based upon date, incrementing
 # suffix until new one is created
-base="${directory:-/var/lib/psqldump}/$today"
+base="$directory/$today"
 suffix=""
 increment=0
 until [[ ! -d "$base$suffix" ]]; do
@@ -87,3 +102,13 @@ for database in $databases; do
     "$database" \
   || failed "pg_dump of $database"
 done
+
+cd .. # in case a relative directory is passed with -d
+
+# Remove older backups
+find -L "$directory" \
+  -maxdepth 1 \
+  -mtime +"${backup_age}" \
+  -print0 \
+  | xargs -0 \
+    rm -rf
