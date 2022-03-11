@@ -9,7 +9,7 @@ backup_age=14
 
 # Default backup location. Usually a symlink to the real location.
 # See the `-d`` option to override
-directory=/var/lib/pgbackup
+directory=/var/lib/psqldump
 
 # usage information (-h, or illegal option)
 usage() {
