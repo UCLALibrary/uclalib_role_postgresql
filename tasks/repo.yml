@@ -6,6 +6,21 @@
     state: present
     validate_certs: true
 
+- name: Disable RHEL Postgres Module
+  ini_file:
+    path: /etc/dnf/modules.d/postgresql.module
+    section: 'postgresql'
+    option: '{{ item.option }}'
+    value: '{{ item.key }}'
+  loop:
+    - { option: 'name', value: 'postgresql' }
+    - { option: 'stream', value: '' }
+    - { option: 'profiles', value: '' }
+    - { option: 'state', value: 'disabled' }
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version == "8"
+
 - name: "Install Postgres Repository"
   package:
     name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{ ansible_distribution_major_version }}-{{ ansible_machine }}/pgdg-redhat-repo-latest.noarch.rpm
