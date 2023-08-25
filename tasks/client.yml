@@ -2,13 +2,15 @@
 
 - name: "Install PostgreSQL Client and Ansible Requirements"
   package:
-    name: [ 'postgresql{{ pgsql_major_version }}', 'python-psycopg2' ]
+    name: 'postgresql{{ pgsql_major_version }}'
     state: present
   become: true
 
 - name: "Install RHEL 7 PostgreSQL Client and Ansible Requirements"
   package:
-    name: 'python-ipaddress'
+    name: 
+      - 'python-ipaddress'
+      - 'python-psycopg2'
     state: present
   become: true
   when:
