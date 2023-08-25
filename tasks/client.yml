@@ -2,9 +2,18 @@
 
 - name: "Install PostgreSQL Client and Ansible Requirements"
   package:
-    name: [ 'postgresql{{ pgsql_major_version }}', 'python-psycopg2', 'python-ipaddress' ]
+    name: [ 'postgresql{{ pgsql_major_version }}', 'python-psycopg2' ]
     state: present
   become: true
+
+- name: "Install RHEL 7 PostgreSQL Client and Ansible Requirements"
+  package:
+    name: 'python-ipaddress'
+    state: present
+  become: true
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version == "7"
 
 - name: "Create database user"
   postgresql_user:
