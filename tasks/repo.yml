@@ -11,7 +11,7 @@
     path: /etc/dnf/modules.d/postgresql.module
     section: 'postgresql'
     option: '{{ item.option }}'
-    value: '{{ item.key }}'
+    value: '{{ item.value }}'
   loop:
     - { option: 'name', value: 'postgresql' }
     - { option: 'stream', value: '' }
