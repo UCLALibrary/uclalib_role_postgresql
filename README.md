@@ -18,8 +18,7 @@ Role Variables
 --------------
 
 * `pgsql_major_version`: (string)
-  * (default) If unset, will use CentOS/RHEL packaged version
-  * If set, will use PGDG
+  * (default) dnf's default posrgresql stream
 * `pgsql_server`: (boolean)
   * (default) false: Install client
   * true: Install client and server
@@ -43,7 +42,7 @@ Role Variables
 * `pgsql_encoding`: (string) Encoding for template0
   * (default) UTF8
 * `pgsql_locale`: (string) Locale for template0
-  * (default) en_US.UTF-8
+  * (default) `en_US.UTF-8`
 
 Dependencies
 ------------
@@ -58,7 +57,7 @@ Example Playbook
       roles:
         - role: uclalib_role_postgresql
           vars:
-            pgsql_major_version: '12'
+            pgsql_major_version: '16'
             pgsql_server: true
             pgsql_superuser_password: 'changeme'
           become: true
@@ -66,7 +65,7 @@ Example Playbook
     - hosts: client
       vars:
         pgsql_host: 'db',
-        pgsql_major_version: '12',
+        pgsql_major_version: '16',
         pgsql_name: 'app',
         pgsql_pass: 'changemealso',
         pgsql_user: 'app',

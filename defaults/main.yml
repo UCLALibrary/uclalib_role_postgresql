@@ -1,10 +1,10 @@
 ---
 
 # Use system packaged postgres
-pgsql_major_version: ""
+pgsql_major_version: "10"
 
 # Install client only
-pgsql_server: false
+#pgsql_server: false
 
 pgsql_host: "localhost"
 pgsql_replicator: "replicator"
