@@ -1,7 +1,11 @@
 ---
 
-# name: Add PostgreSQL EL Repository
-- import_tasks: repo.yml
+- name: Enable PostgreSQL dnf module
+  include_tasks: dnf-module.yml
+
+- name: debug pgsql_server
+  debug:
+    var: pgsql_server
 
 - name: Install PostgreSQL Server (if requested)
   include_tasks: server.yml

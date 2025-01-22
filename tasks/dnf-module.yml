@@ -1,0 +1,8 @@
+---
+
+- name: Enable postgresql module with stream
+  command:
+    cmd: dnf --assumeyes module enable postgresql:{{ pgsql_major_version }}/{{ pgsql_server | ternary("server","client") }}
+    warn: false
+  register: dnf
+  changed_when: '"Nothing to do." not in dnf.stdout'

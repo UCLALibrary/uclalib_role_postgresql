@@ -1,8 +1,11 @@
 ---
 
-- name: "Install Postgres"
+- name: "Install Postgres Server"
   package:
-    name: [ 'postgresql{{ pgsql_major_version }}-server', 'python-psycopg2', 'python-ipaddress' ]
+    name:
+      - 'postgresql-server'
+      - 'python3-psycopg2'
+      # - 'python-ipaddress'
     state: present
   become: true
   notify:

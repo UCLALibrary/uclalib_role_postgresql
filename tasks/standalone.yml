@@ -1,18 +1,18 @@
 ---
 
 - name: "Intialize PostgreSQL"
-  command: "{{ pgsql_setup }} initdb"
+  command: "postgresql-setup initdb"
   args:
-    creates: /var/lib/pgsql/{{ pgsql_major_version }}/data/postgresql.conf
+    creates: /var/lib/pgsql/data/postgresql.conf
   environment:
-    PATH: "{{ pgsql_path }}"
     PGSETUP_INITDB_OPTIONS: >
       --encoding={{ pgsql_encoding }} --locale={{ pgsql_locale }}
   become: true
   notify: Start PostgreSQL
 
 # Must start posgtgresql prior to adjusting user parameters
-- meta: flush_handlers
+- name: Ensure posgres server is running
+  meta: flush_handlers
 
 - name: "Set Superuser password"
   postgresql_user:
@@ -60,7 +60,7 @@
     - {address: '', type: 'local', user: 'all', method: 'peer' }
     - { address: 'samehost', database: 'all', user: 'postgres' }
     - { address: 'samenet' }
-    - { address: 'samenet', database: 'replication', user: '{{ pgsql_replicator}}'}
+    - { address: 'samenet', database: 'replication', user: '{{ pgsql_replicator }}'}
   notify:
     - Restart PostgreSQL
 

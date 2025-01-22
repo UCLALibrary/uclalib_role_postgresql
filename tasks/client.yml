@@ -1,21 +1,10 @@
 ---
 
-- name: "Install PostgreSQL Client and Ansible Requirements"
+- name: "Install PostgreSQL Client"
   package:
-    name: 'postgresql{{ pgsql_major_version }}'
+    name: 'postgresql'
     state: present
   become: true
-
-- name: "Install RHEL 7 PostgreSQL Client and Ansible Requirements"
-  package:
-    name: 
-      - 'python-ipaddress'
-      - 'python-psycopg2'
-    state: present
-  become: true
-  when:
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "7"
 
 - name: "Create database user"
   postgresql_user:
@@ -75,4 +64,5 @@
     - pgsql_name != pgsql_user
 
 # Another role may depend upon proper setting of pg_hba.conf
-- meta: flush_handlers
+- name: Restart PostgreSQL to update pg_hba.conf
+  meta: flush_handlers
