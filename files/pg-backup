@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e # abort at any unanticipated error
+set -euo pipefail # abort at any unanticipated error
 
 today="$(date +%Y-%m-%d)" # YYYY-MM-DD (ISO 8601)
 
@@ -32,6 +32,9 @@ failed() {
   # direct stdout to saved stderr
   exec >&4
   echo "${1+$1 }failed: $status (line: ${BASH_LINENO[0]})"
+  echo
+  echo "==> log.txt <=="
+  cat log.txt
 }
 
 # Handle unanticpated errors
