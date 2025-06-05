@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e # abort at any unanticipated error
+set -euo pipefail # abort at any unanticipated error
 
 today="$(date +%Y-%m-%d)" # YYYY-MM-DD (ISO 8601)
 
@@ -32,10 +32,15 @@ failed() {
   # direct stdout to saved stderr
   exec >&4
   echo "${1+$1 }failed: $status (line: ${BASH_LINENO[0]})"
+  echo
+  echo "==> log.txt <=="
+  cat log.txt
 }
 
-# Handle unanticpated errors
-trap failed ERR
+# log with timestamp
+log() {
+  echo "@$(date +%s.%N) $*"
+}
 
 # leading : lets us handle illegal options
 while getopts :b:d:h arg; do
@@ -51,6 +56,9 @@ done
 case $backup_age in
   ''|*[!0-9]*) echo "-b must be numeric"; echo; usage; exit 1 ;;
 esac
+
+# Handle unanticpated errors
+trap failed ERR
 
 # Create dump directory based upon date, incrementing
 # suffix until new one is created
@@ -72,20 +80,25 @@ exec 4<&2
 # Log any/all output
 exec > log.txt
 exec 2>&1
+log "BEGIN BACKUP"
 
 # Dump the full cluster
+log '--> Begin full cluster dump'
 pg_dumpall \
   --clean  \
   --if-exists \
 | gzip -1 > "pg_cluster-$today.sql.gz" \
 || failed "pg_cluster"
+log '<-- End full cluster dump' 
 
 # Dump individual databases
 # global information (outside all single databases)
+log '--> Begin pg_globals dump'
 pg_dumpall \
   --file "pg_globals-$today.sql" \
   --globals-only \
 || failed "pg_globals"
+log '<-- End pg_globals dump'
 # find, then loop over databases
 databases="$(psql \
   --command 'SELECT datname FROM pg_database WHERE datistemplate = false;'\
@@ -93,6 +106,7 @@ databases="$(psql \
   --tuples-only \
 )"
 for database in $databases; do
+  log "--> Begin $database dump"
   pg_dump \
     --clean \
     --file "pg_$database-$today.d" \
@@ -101,14 +115,18 @@ for database in $databases; do
     --if-exists \
     "$database" \
   || failed "pg_dump of $database"
+  log "<-- End $database dump"
 done
 
 cd .. # in case a relative directory is passed with -d
 
 # Remove older backups
+log "--> Begin removing older backups"
 find -L "$directory" \
   -maxdepth 1 \
   -mtime +"${backup_age}" \
   -print0 \
   | xargs -0 \
     rm -rf
+log "--> End removing older backups"
+log "END BACKUP"
